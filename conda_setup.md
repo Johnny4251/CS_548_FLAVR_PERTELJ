@@ -38,10 +38,22 @@ pip install torch torchvision torchaudio
 
 ### Additional Packages
 
-Additional required packages.
+Additional required packages
 
 ```bash
 pip install opencv-python
 pip install tqdm
 pip install av
+```
+
+## Make it Portable (Optional)
+
+### With `flavrenv` active, install `conda-pack`
+```bash
+conda install -y -c conda-forge conda-pack
+```
+
+### Save `flavrenv` environment as `.zip`
+```bash
+conda-pack --format zip
 ```
