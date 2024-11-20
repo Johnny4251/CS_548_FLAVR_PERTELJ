@@ -1,12 +1,33 @@
 import os
 import cv2
 
-def get_frame_data(video_path):
-    cap = cv2.VideoCapture(video_path)
-    frame_cnt =  cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    fps = cap.get(cv2.CAP_PROP_FPS)
+def get_video_data(video_path):
+    capture = cv2.VideoCapture(video_path)
+    frame_cnt =  capture.get(cv2.CAP_PROP_FRAME_COUNT)
+    fps = capture.get(cv2.CAP_PROP_FPS)
     time = frame_cnt / fps
     return frame_cnt, fps, time
+
+def view_video(video_path):
+    _,fps,_ = get_video_data(video_path)
+    fps = int(fps)
+    
+    cv2.namedWindow(video_path)
+    capture = cv2.VideoCapture(video_path)
+
+    if os.path.exists(video_path) == False: raise Exception("ERROR: Can not find video from path.")
+
+    key = -1
+    while key == -1:
+        ret, frame = capture.read()
+        if ret == True:        
+            cv2.imshow(video_path, frame)
+        else:
+            break
+        key = cv2.waitKey(fps)
+
+    capture.release()
+    cv2.destroyAllWindows()
 
 def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", interpolation=2, slow_motion=True):
     if interpolation != 2 and interpolation != 4 and interpolation != 8:
@@ -16,7 +37,7 @@ def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", i
     if os.path.exists(video_path) == False: raise Exception("ERROR: Can not find video from path.")
     if os.path.exists(model_pth) == False: raise Exception("ERROR: Can not find model from path.")
 
-    orig_cnt, orig_fps, orig_time = get_frame_data(video_path)
+    _, orig_fps, _ = get_video_data(video_path)
     fps = int(orig_fps)
 
     # if not in slow_motion => use a higher res video instead by multiplying fps by interpolation factor
@@ -50,6 +71,8 @@ def main():
     interp = 8
     vfi_info = compute_vfi_video("noice.mp4", "new_noice", f"model/FLAVR_{interp}x.pth", interpolation=interp, slow_motion=True)
     print(vfi_info)
+
+    view_video(vfi_info[0])
 
 
 if __name__ == "__main__":
