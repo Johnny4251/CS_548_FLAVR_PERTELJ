@@ -8,8 +8,7 @@ def get_frame_data(video_path):
     time = frame_cnt / fps
     return frame_cnt, fps, time
 
-
-def compute_vfi_video(video_path, new_name, model_pth="model/FLAVR_2x.pth", interpolation=2, slow_motion=True):
+def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", interpolation=2, slow_motion=True):
     if interpolation != 2 and interpolation != 4 and interpolation != 8:
         raise Exception("Interpolation level not supported")
     
@@ -26,6 +25,10 @@ def compute_vfi_video(video_path, new_name, model_pth="model/FLAVR_2x.pth", inte
     else:
         fps = int(orig_fps * interpolation)
         os.system(f"python interpolate.py --input_video {video_path} --factor {interpolation} --load_model {model_pth} --output_fps {fps}")
+
+    # rename interpolated video to the output video + .avi extension
+    new_path = video_path[:-4] + f"_{interpolation}x.avi"
+    os.rename(new_path, output_name+".avi")
 
 
 def main():
