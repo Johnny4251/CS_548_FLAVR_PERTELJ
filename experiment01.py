@@ -11,23 +11,35 @@ def get_video_data(video_path):
 def view_video(video_path):
     _,fps,_ = get_video_data(video_path)
     fps = int(fps)
-    
+
     cv2.namedWindow(video_path)
     capture = cv2.VideoCapture(video_path)
 
     if os.path.exists(video_path) == False: raise Exception("ERROR: Can not find video from path.")
+    if not capture.isOpened(): raise Exception("ERROR: Could not open or find the video.")
 
     key = -1
     while key == -1:
         ret, frame = capture.read()
-        if ret == True:        
-            cv2.imshow(video_path, frame)
-        else:
-            break
+        if ret == True: cv2.imshow(video_path, frame)
+        else: break
         key = cv2.waitKey(fps)
 
     capture.release()
     cv2.destroyAllWindows()
+
+def get_video_frames(video_path):
+
+    capture = cv2.VideoCapture(video_path)
+    if not capture.isOpened(): raise Exception("ERROR: Could not open or find the video.")
+    
+    video_frames = []
+    while True:
+        ret, frame = capture.read()
+        if ret: video_frames.append(frame)
+        else:
+            capture.release()
+            return video_frames
 
 def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", interpolation=2, slow_motion=True):
     if interpolation != 2 and interpolation != 4 and interpolation != 8:
@@ -66,14 +78,13 @@ def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", i
     print(f"VFI VIDEO SAVED AS: {output_name}")
     return output_name, fps
 
-
 def main():
-    interp = 8
-    vfi_info = compute_vfi_video("noice.mp4", "new_noice", f"model/FLAVR_{interp}x.pth", interpolation=interp, slow_motion=True)
-    print(vfi_info)
+    interp = 2
+    video_path,fps = compute_vfi_video("noice.mp4", "new_noice", f"model/FLAVR_{interp}x.pth", interpolation=interp, slow_motion=True)
+    print(video_path, fps)
 
-    view_video(vfi_info[0])
-
+    view_video(video_path)
+    video_frames = get_video_frames(video_path)
 
 if __name__ == "__main__":
     main()
