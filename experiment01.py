@@ -1,11 +1,13 @@
 import os
 import cv2
+import numpy as np
 
 def get_video_data(video_path):
     capture = cv2.VideoCapture(video_path)
     frame_cnt =  capture.get(cv2.CAP_PROP_FRAME_COUNT)
     fps = capture.get(cv2.CAP_PROP_FPS)
-    time = frame_cnt / fps
+    if fps != 0: time = frame_cnt / fps
+    else: time = 0
     return frame_cnt, fps, time
 
 def play_video_from_path(video_path):
@@ -35,10 +37,44 @@ def play_video_from_list(video_list, fps):
 
     for i in range(len(video_list)):
         frame = video_list[i]
+
         cv2.imshow(f"Video {fps}", frame)
         key = cv2.waitKey(fps)
         if key == 27: break
     cv2.destroyAllWindows()
+
+def play_comparison_videos(video1,video2):
+
+    sub_images = []
+
+    video1_window = "Video 1"
+    video2_window = "Video 2"
+    video3_window = "Subtracted Video"
+    cv2.namedWindow(video1_window)
+    cv2.namedWindow(video2_window)
+    cv2.namedWindow(video3_window)
+
+    video_len = min(len(video1), len(video2))
+    for i in range(video_len):
+        frame1 = video1[i]
+        frame2 = video2[i]
+        frame1_gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+        frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY) 
+        frame1_gray = frame1_gray.astype(np.float64) / 255.0
+        frame2_gray = frame2_gray.astype(np.float64) / 255.0
+
+        frame3 = np.absolute(frame1_gray - frame2_gray)
+        sub_images.append(frame3)
+
+        cv2.imshow(video1_window, frame1)
+        cv2.imshow(video2_window, frame2)
+        cv2.imshow(video3_window, frame3)
+        
+        cv2.waitKey(-1)
+
+    cv2.destroyAllWindows()
+
+    return sub_images
 
 def get_video_frames(video_path):
 
@@ -90,14 +126,31 @@ def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", i
     print(f"VFI VIDEO SAVED AS: {output_name}")
     return output_name, fps
 
-def main():
-    interp = 8
-    video_path,fps = compute_vfi_video("noice.mp4", f"new_noice_{interp}x", f"model/FLAVR_{interp}x.pth", interpolation=interp, slow_motion=True)
-    print(video_path, fps)
-
-    #play_video_from_path(video_path)
+def compare_videos(video, ground, interpolation=2):
+    if interpolation > 0:
+        video_path, _ = compute_vfi_video(video, f"new_{video}_{interpolation}x", f"model/FLAVR_{interpolation}x.pth", interpolation=interpolation, slow_motion=True)
+    else: video_path = video
     video_frames = get_video_frames(video_path)
-    play_video_from_list(video_frames, fps)
+    ground_frames = get_video_frames(ground)
+    diff_video = play_comparison_videos(video_frames,ground_frames)
+    return diff_video
+
+def main():
+    
+    videos_to_interpolate = ['punch_original.mp4', 'sprite_original.mp4', 'sheep_25fps.mp4']
+    for video in videos_to_interpolate:
+        if os.path.exists(video) == False: 
+            print("Can not find video.. skipping")
+            continue
+        print(f"Interpolating: {video}")
+        interp = 2
+        max_interp = 8
+        while interp <= max_interp:
+            new_name = f"new_{video}_{interp}x"
+            video_path, fps = compute_vfi_video(video, new_name, f"model/FLAVR_{interp}x.pth", interpolation=interp, slow_motion=True)
+            print(video_path, fps)
+            #play_video_from_path(video_path)
+            interp = interp << 2 # multiply by 2
 
 if __name__ == "__main__":
     main()
