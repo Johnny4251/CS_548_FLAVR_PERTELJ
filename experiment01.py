@@ -137,7 +137,7 @@ def compare_videos(video, ground, interpolation=2):
 
 def main():
     
-    videos_to_interpolate = ['punch_original.mp4', 'sprite_original.mp4', 'sheep_25fps.mp4']
+    videos_to_interpolate = ['noice.mp4']#['punch_original.mp4', 'sprite_original.mp4', 'sheep_25fps.mp4']
     for video in videos_to_interpolate:
         if os.path.exists(video) == False: 
             print("Can not find video.. skipping")
@@ -150,7 +150,7 @@ def main():
             video_path, fps = compute_vfi_video(video, new_name, f"model/FLAVR_{interp}x.pth", interpolation=interp, slow_motion=True)
             print(video_path, fps)
             #play_video_from_path(video_path)
-            interp = interp << 2 # multiply by 2
+            interp = interp << 1 # multiply by 2
 
 if __name__ == "__main__":
-    main()
+    main() 
