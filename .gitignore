@@ -1,0 +1,5 @@
+/videos
+*.mp4
+*.avi
+*.pth
+*.pyc
