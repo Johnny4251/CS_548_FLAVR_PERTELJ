@@ -31,16 +31,23 @@ def play_video_from_path(video_path):
     capture.release()
     cv2.destroyAllWindows()
 
-def play_video_from_list(video_list, fps):
+def play_video_from_list(video_list, fps, loop=False):
     fps = int(fps)
 
     cv2.namedWindow(f"Video {fps}")
 
-    for i in range(len(video_list)):
+    i=0
+    while True:
+        i += 1
+        if (i > len(video_list)-1 and loop):
+            i = 0
+        elif (i > len(video_list)-1 and loop==False):
+            break
         frame = video_list[i]
         cv2.imshow(f"Video {fps}", frame)
         key = cv2.waitKey(fps)
         if key == 27: break
+
     cv2.destroyAllWindows()
 
 def play_comparison_videos(video1,video2):
