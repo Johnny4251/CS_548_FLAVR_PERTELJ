@@ -38,19 +38,19 @@ def play_video_from_list(video_list, fps, loop=False):
 
     i=0
     while True:
+        frame = video_list[i]
+        cv2.imshow(f"Video {fps}", frame)
+        key = cv2.waitKey(fps)
+        if key == 27: break
         i += 1
         if (i > len(video_list)-1 and loop):
             i = 0
         elif (i > len(video_list)-1 and loop==False):
             break
-        frame = video_list[i]
-        cv2.imshow(f"Video {fps}", frame)
-        key = cv2.waitKey(fps)
-        if key == 27: break
 
     cv2.destroyAllWindows()
 
-def play_comparison_videos(video1,video2):
+def play_comparison_videos(video1,video2, fps=-1):
 
     sub_images = []
 
@@ -79,7 +79,7 @@ def play_comparison_videos(video1,video2):
         cv2.imshow(video2_window, frame2)
         cv2.imshow(video3_window, frame3)
         
-        cv2.waitKey(-1)
+        cv2.waitKey(fps)
 
     cv2.destroyAllWindows()
 
@@ -117,8 +117,31 @@ def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", i
         os.system(f"python interpolate.py --input_video {video_path} --factor {interpolation} --load_model {model_pth} --output_fps {fps}")
 
     try:
-        # rename interpolated video to the output video + .avi extension
         new_path = Path(video_path).stem
+        new_path += f".avi_{interpolation}x.avi"
+
+        if not output_name.endswith(".avi"):
+            output_name += ".avi"
+
+        if os.path.exists(output_name):
+            remove_flag = input(f"File: {output_name} already exists. Remove? (y/n): ")
+            if remove_flag.lower().startswith("y"):
+                os.remove(output_name)
+            else:
+                base_name = Path(output_name).stem
+                output_name = f"{base_name}_NEW.avi"
+                print(f"Output name changed to: {output_name}")
+
+        os.rename(new_path, output_name)
+    except Exception as e:
+        print(f"Error during file renaming: {e}")
+        output_name = video_path  # Fall back to original video path
+    
+    print(f"VFI VIDEO SAVED AS: {output_name}")
+    return output_name, fps
+
+    try:
+        new_path = new_path[-4]
         new_path += f"_{interpolation}x.avi"
         output_name = output_name+".avi"
         if os.path.exists(output_name) == True: 
