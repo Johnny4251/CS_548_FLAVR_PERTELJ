@@ -1,5 +1,6 @@
 import os
 import cv2
+from pathlib import Path
 import numpy as np
 
 def get_video_data(video_path):
@@ -37,7 +38,6 @@ def play_video_from_list(video_list, fps):
 
     for i in range(len(video_list)):
         frame = video_list[i]
-
         cv2.imshow(f"Video {fps}", frame)
         key = cv2.waitKey(fps)
         if key == 27: break
@@ -54,6 +54,8 @@ def play_comparison_videos(video1,video2):
     cv2.namedWindow(video2_window)
     cv2.namedWindow(video3_window)
 
+    # use the video w/ the least amount of frames
+    # to avoid special errors
     video_len = min(len(video1), len(video2))
     for i in range(video_len):
         frame1 = video1[i]
@@ -109,14 +111,15 @@ def compute_vfi_video(video_path, output_name, model_pth="model/FLAVR_2x.pth", i
 
     try:
         # rename interpolated video to the output video + .avi extension
-        new_path = video_path[:-4] + f"_{interpolation}x.avi"
+        new_path = Path(video_path).stem
+        new_path += f"_{interpolation}x.avi"
         output_name = output_name+".avi"
         if os.path.exists(output_name) == True: 
             remove_flag = input(f"File: {output_name} already exists. Remove? ")
             if remove_flag.lower()[0] == "y":
                 os.remove(output_name)
             else:
-                output_name = output_name[:-4]
+                output_name = Path(output_name).stem
                 output_name += "(NEW).avi"
         os.rename(new_path, output_name)
     except Exception as e:
@@ -136,8 +139,7 @@ def compare_videos(video, ground, interpolation=2):
     return diff_video
 
 def main():
-    
-    videos_to_interpolate = ['noice.mp4']#['punch_original.mp4', 'sprite_original.mp4', 'sheep_25fps.mp4']
+    videos_to_interpolate = ['punch_original.mp4', 'sprite_original.mp4', 'sheep_25fps.mp4']
     for video in videos_to_interpolate:
         if os.path.exists(video) == False: 
             print("Can not find video.. skipping")
