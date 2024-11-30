@@ -32,28 +32,42 @@ def scale_video_list(video_list, fx=0.5, fy=0.5):
         new_video_list.append(cv2.resize(video_list[i], None, fx=fx, fy=fy))
     return new_video_list
 
-def main():
-    video = "punch_original.mp4"
+def compute_mse(subtracted_video):
+    errors = []
+    for frame in subtracted_video:
+        frame = np.array(frame)
+        frame_error = np.mean(frame**2)
+        errors.append(frame_error)
+    
+    return np.mean(errors)
+
+def chop_frame_comparison(video):
     _,fps,_ = experiment01.get_video_data(video)
-    skip_count = 2
+    skip_count = 8
     new_fps = fps // skip_count
-    print(f"SKIP COUNT:\t{skip_count}\nOLD FPS:\t{fps}\nNEW FPS:\t{new_fps}")
     video_frames = experiment01.get_video_frames(video_path=video)
     discarded_video = discard_frames(video_frames, skip_count)
     experiment01.play_video_from_list(discarded_video, new_fps, loop=True)
     discarded_video_path = save_video_from_list(discarded_video, new_fps,f"discarded_video_{skip_count}.avi")
+    print("chopped video..")
 
     output_path = f"{video}_{skip_count}"
-    #output_path,output_fps = experiment01.compute_vfi_video(discarded_video_path, output_path, f"model/FLAVR_{skip_count}x.pth", interpolation=skip_count, slow_motion=False)
-    #output_path = f"punch_original.mp4_{skip_count}.avi"
+    output_path,output_fps = experiment01.compute_vfi_video(discarded_video_path, output_path, f"model/FLAVR_{skip_count}x.pth", interpolation=skip_count, slow_motion=False)
+    #output_path = f"video_{skip_count}.avi"
     #output_fps = 30
-    print(output_path)
     
     video1 = scale_video_list(get_video_frames(video))
     video2 = scale_video_list(get_video_frames(output_path))
     #experiment01.play_video_from_list(video1, fps, loop=True)
     sub_images = experiment01.play_comparison_videos(video1, video2, fps=output_fps)
+    error = compute_mse(sub_images)
+    round_val = 4
+    print(f"SKIP COUNT:\t{skip_count}\nOLD FPS:\t{fps}\nNEW FPS:\t{new_fps}")
+    print(f"Mean Squared Error:\t{np.round(error, round_val)}")
     experiment01.play_video_from_list(sub_images, fps, loop=True)
+
+def main():
+    chop_frame_comparison("hammer.mp4")
 
 if __name__ == "__main__":
     main()
