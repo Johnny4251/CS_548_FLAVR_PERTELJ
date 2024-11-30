@@ -40,9 +40,33 @@ def compute_mse(subtracted_video):
     
     return np.mean(errors)
 
-def chop_frame_comparison(video):
+def save_sub_video(sub_images, fps, output_file):
+    if not sub_images:
+        raise ValueError("The sub_images list is empty.")
+
+    height, width = sub_images[0].shape
+    for idx, image in enumerate(sub_images):
+        if image.shape != (height, width):
+            raise ValueError(f"Frame {idx} has inconsistent dimensions: {image.shape}. Expected: ({height}, {width}).")
+
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(output_file, fourcc, fps, (width, height), isColor=False)
+
+    for idx, image in enumerate(sub_images):
+        if not np.issubdtype(image.dtype, np.floating):
+            raise ValueError(f"Frame {idx} is not a valid floating-point grayscale image.")
+        if image.min() < 0 or image.max() > 1:
+            raise ValueError(f"Frame {idx} values are out of range [0, 1].")
+        frame = (image * 255).astype(np.uint8)
+        frame_bgr = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+        out.write(frame_bgr)
+
+    out.release()
+
+    print(f"Subtracted video saved successfully to {output_file}.")
+
+def chop_frame_comparison(video, skip_count=2):
     _,fps,_ = get_video_data(video)
-    skip_count = 8
     new_fps = fps // skip_count
     video_frames = get_video_frames(video_path=video)
     discarded_video = discard_frames(video_frames, skip_count)
@@ -52,21 +76,19 @@ def chop_frame_comparison(video):
 
     output_path = f"{video}_{skip_count}"
     output_path,output_fps = compute_vfi_video(discarded_video_path, output_path, f"model/FLAVR_{skip_count}x.pth", interpolation=skip_count, slow_motion=False)
-    #output_path = f"video_{skip_count}.avi"
-    #output_fps = 30
-    
     video1 = scale_video_list(get_video_frames(video))
     video2 = scale_video_list(get_video_frames(output_path))
     #play_video_from_list(video1, fps, loop=True)
     sub_images = play_comparison_videos(video1, video2, fps=output_fps)
     error = compute_mse(sub_images)
-    round_val = 4
+
+    round_val = 6
     print(f"SKIP COUNT:\t{skip_count}\nOLD FPS:\t{fps}\nNEW FPS:\t{new_fps}")
     print(f"Mean Squared Error:\t{np.round(error, round_val)}")
     play_video_from_list(sub_images, fps, loop=True)
 
 def main():
-    chop_frame_comparison("hammer.mp4")
+    chop_frame_comparison("bird.mp4", skip_count=8)
 
 if __name__ == "__main__":
     main()
